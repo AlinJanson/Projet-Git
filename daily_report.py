@@ -3,24 +3,82 @@ import yfinance as yf
 from datetime import datetime
 import os
 
-# Configuration sécurisée des chemins pour Cron
+# Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPORT_DIR = os.path.join(BASE_DIR, "reports")
 TICKERS = ["AAPL", "BTC-USD", "EURUSD=X"]
 
-# ... (Le reste de tes fonctions calculate_metrics reste identique) ...
+def calculate_metrics(ticker):
+    """Downloads data and calculates basic daily metrics."""
+    try:
+        data = yf.download(ticker, period="1y", interval="1d", progress=False)
+        if data.empty:
+            return None
+            
+        # Get scalar values correctly
+        last_close = data['Close'].iloc[-1]
+        prev_close = data['Close'].iloc[-2]
+        
+        # If last_close is a Series (common in new yfinance), take the float value
+        if isinstance(last_close, pd.Series):
+            last_close = last_close.item()
+            prev_close = prev_close.item()
+            
+        daily_return = (last_close - prev_close) / prev_close
+        
+        # Volatility
+        returns = data['Close'].pct_change()
+        volatility = returns.std() * (252**0.5)
+        
+        # Max Drawdown
+        cum_ret = (1 + returns).cumprod()
+        drawdown = (cum_ret - cum_ret.cummax()) / cum_ret.cummax()
+        max_dd = drawdown.min()
+        
+        if isinstance(max_dd, pd.Series):
+             max_dd = max_dd.item()
+        if isinstance(volatility, pd.Series):
+             volatility = volatility.item()
+
+        return {
+            "Ticker": ticker,
+            "Price": round(last_close, 2),
+            "Daily_Return": f"{daily_return:.2%}",
+            "Volatility": f"{volatility:.2%}",
+            "Max_Drawdown": f"{max_dd:.2%}"
+        }
+    except Exception as e:
+        print(f"Error for {ticker}: {e}")
+        return None
 
 def generate_report():
     if not os.path.exists(REPORT_DIR):
         os.makedirs(REPORT_DIR)
         
+    results = []
+    for t in TICKERS:
+        res = calculate_metrics(t)
+        if res:
+            results.append(res)
+            
+    # Write Report
     date_str = datetime.now().strftime("%Y-%m-%d")
     report_file = os.path.join(REPORT_DIR, f"report_{date_str}.txt")
     
-    # ... (Le reste de ton code d'écriture est bon) ...
+    with open(report_file, "w") as f:
+        f.write(f"--- DAILY FINANCIAL REPORT: {date_str} ---\n\n")
+        if not results:
+            f.write("No data available.\n")
+        else:
+            for r in results:
+                f.write(f"ASSET: {r['Ticker']}\n")
+                f.write(f"  Price: ${r['Price']}\n")
+                f.write(f"  Return: {r['Daily_Return']}\n")
+                f.write(f"  Vol (Ann): {r['Volatility']}\n")
+                f.write(f"  Max DD: {r['Max_Drawdown']}\n")
+                f.write("-" * 30 + "\n")
     
-    # Ajoute print pour le log Cron
-    print(f"[{datetime.now()}] Rapport généré : {report_file}")
+    print(f"[{datetime.now()}] Report generated: {report_file}")
 
 if __name__ == "__main__":
     generate_report()
