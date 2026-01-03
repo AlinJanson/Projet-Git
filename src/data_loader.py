@@ -1,16 +1,19 @@
 import yfinance as yf
 import pandas as pd
 
-def get_financial_data(tickers, period="1mo", interval="5m"):
-    """
-    Récupère les données de marché. 
-    Gère les erreurs pour éviter le crash de l'app[cite: 60].
-    """
+def fetch_data(tickers, interval="1d", period="1y"):
+    if period in ["1y", "2y", "5y", "max"]:
+        interval = "1d"
+
     try:
-        data = yf.download(tickers, period=period, interval=interval)
+        data = yf.download(tickers, period=period, interval=interval, progress=False, auto_adjust=True)
         if data.empty:
             return None
-        return data['Close']
+
+        if isinstance(data.columns, pd.MultiIndex):
+            data = data.xs(tickers, level=1, axis=1) if tickers in data.columns.levels[1] else data
+
+        return data
     except Exception as e:
-        print(f"Erreur lors de la récupération : {e}")
+        print(f"Erreur API: {e}")
         return None
