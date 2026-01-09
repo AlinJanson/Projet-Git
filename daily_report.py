@@ -52,3 +52,35 @@ def calculate_metrics(ticker):
         return None
 
 
+
+def generate_report():
+    if not os.path.exists(REPORT_DIR):
+        os.makedirs(REPORT_DIR)
+        
+    results = []
+    for t in TICKERS:
+        res = calculate_metrics(t)
+        if res:
+            results.append(res)
+            
+    # Write Report
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    report_file = os.path.join(REPORT_DIR, f"report_{date_str}.txt")
+    
+    with open(report_file, "w") as f:
+        f.write(f"--- DAILY FINANCIAL REPORT: {date_str} ---\n\n")
+        if not results:
+            f.write("No data available.\n")
+        else:
+            for r in results:
+                f.write(f"ASSET: {r['Ticker']}\n")
+                f.write(f"  Price: ${r['Price']}\n")
+                f.write(f"  Return: {r['Daily_Return']}\n")
+                f.write(f"  Vol (Ann): {r['Volatility']}\n")
+                f.write(f"  Max DD: {r['Max_Drawdown']}\n")
+                f.write("-" * 30 + "\n")
+    
+    print(f"[{datetime.now()}] Report generated: {report_file}")
+
+if __name__ == "__main__":
+    generate_report()
