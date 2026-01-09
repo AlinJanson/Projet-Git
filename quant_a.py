@@ -25,3 +25,24 @@ def apply_strategies(df, short_window=20, long_window=50):
     
     return data.dropna()
 
+def compute_performance_metrics(df):
+    """
+    Calcule le Ratio de Sharpe et le Max Drawdown.
+    """
+    volatility = df['Strategy_Returns'].std() * (252**0.5)
+    
+    if volatility == 0:
+        sharpe_ratio = 0
+    else:
+        sharpe_ratio = (df['Strategy_Returns'].mean() * 252) / volatility
+    
+    cumulative = df['Momentum_Cum']
+    running_max = cumulative.cummax()
+    drawdown = (cumulative - running_max) / running_max
+    max_drawdown = drawdown.min()
+    
+    return {
+        "Sharpe Ratio": round(sharpe_ratio, 2),
+        "Max Drawdown": f"{max_drawdown:.2%}",
+        "Volatility": f"{volatility:.2%}"
+    }
