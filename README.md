@@ -16,3 +16,7 @@ Un script de reporting quotidien est configuré sur le serveur Linux pour s'exé
 * **Commande Cron utilisée** :
   ```bash
   00 20 * * * /usr/bin/python3 /home/antoine/Projet-Git/daily_report.py >> /home/antoine/Projet-Git/cron_log.log 2>&1
+
+first : pip install -r requirements.txt
+
+then : streamlit run app.py
