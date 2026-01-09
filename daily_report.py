@@ -3,12 +3,12 @@ import yfinance as yf
 from datetime import datetime
 import os
 
-# Configuration sécurisée des chemins pour Cron
+# Configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 REPORT_DIR = os.path.join(BASE_DIR, "reports")
 TICKERS = ["AAPL", "BTC-USD", "EURUSD=X"]
 
-def calculate_metrics(ticker):
+ef calculate_metrics(ticker):
     """Downloads data and calculates basic daily metrics."""
     try:
         data = yf.download(ticker, period="1y", interval="1d", progress=False)
